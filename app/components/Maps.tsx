@@ -1,15 +1,23 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import Map, { Source, Layer } from "react-map-gl/maplibre";
-import "maplibre-gl/dist/maplibre-gl.css";
+import Map from "react-map-gl/maplibre";
+import { MapRef } from "react-map-gl/maplibre";
+import { MapLayerMouseEvent } from "react-map-gl/maplibre";
 import CountryCard from "./CountryCard";
+import { Feature, FeatureCollection } from "geojson"; 
 
 export default function MapComponent() {
-  const mapRef = useRef<any>(null);
-  const [allCountriesGeoJSON, setAllCountriesGeoJSON] = useState<any>(null);
+  const mapRef = useRef<MapRef | null>(null); 
+  const [allCountriesGeoJSON, setAllCountriesGeoJSON] = useState<GeoJSON.FeatureCollection | null>(null);
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [countryInfo, setCountryInfo] = useState<any>(null);
+  const [countryInfo, setCountryInfo] = useState<{
+    name: string;
+    capital: string;
+    population: string;
+    flag: string;
+  } | null>(null);
+
   const [isLoading, setIsLoading] = useState(true); // ✅ Prevents loading issues
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -23,9 +31,9 @@ export default function MapComponent() {
         const data = await response.json();
 
         // ✅ Ensure each country has a unique `id`
-        const updatedData = {
+        const updatedData: FeatureCollection = {
           ...data,
-          features: data.features.map((feature: any, index: number) => ({
+          features: data.features.map((feature: Feature, index: number) => ({
             ...feature,
             id: index + 1, // ✅ Assign unique ID
           })),
@@ -63,7 +71,7 @@ export default function MapComponent() {
   };
 
   // ✅ Handle country selection when clicking the map
-  const handleMapClick = (e: any) => {
+  const handleMapClick = (e: MapLayerMouseEvent) => {
     if (!mapRef.current || !allCountriesGeoJSON) return;
   
     const map = mapRef.current.getMap();
@@ -71,7 +79,7 @@ export default function MapComponent() {
   
     if (features.length > 0) {
       const clickedFeature = features[0];
-      const countryId = clickedFeature.id;
+      const countryId = Number(clickedFeature.id);
       const countryName = clickedFeature.properties.admin;
   
       if (countryId) {
@@ -98,17 +106,16 @@ export default function MapComponent() {
   
           // ✅ Adjust position if near the left or right edge
           if (posX < cardWidth / 2) {
-            posX = cardWidth / 2 + 15; // Shift right if too close to the left
+            posX = cardWidth / 2 + 20; // Shift right if too close to the left
           } else if (posX > mapWidth - cardWidth / 2) {
-            posX = mapWidth - cardWidth / 2 - 15; // Shift left if too close to the right
+            posX = mapWidth - cardWidth / 2 - 20; // Shift left if too close to the right
           }
   
           // ✅ Adjust position if near the top or bottom
           if (posY < cardHeight + 20) {
-            posY += cardHeight + 15; // Move tooltip below the click if too close to the top
+            posY = cardHeight + 55; // Move tooltip below the click if too close to the top
           } else if (posY > mapHeight - cardHeight - 30) {
-            console.log("Close to bottom")
-            posY -= cardHeight/4; 
+            posY -= cardHeight/4 - 30; 
           } 
   
           setTooltipPosition({ x: posX, y: posY });
@@ -157,11 +164,12 @@ export default function MapComponent() {
             mapStyle="https://demotiles.maplibre.org/style.json"
             onClick={handleMapClick}
             onLoad={() => {
-              const map = mapRef.current.getMap();
+              const map = mapRef.current?.getMap();
+              if (!map) return;
 
               map.addSource("countries", {
                 type: "geojson",
-                data: allCountriesGeoJSON,
+                data: allCountriesGeoJSON as GeoJSON.FeatureCollection,
               });
 
               // ✅ Add the country fill layer with DaisyUI colors

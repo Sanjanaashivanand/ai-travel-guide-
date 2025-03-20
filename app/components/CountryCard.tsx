@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 interface CountryCardProps {
   country: string;
@@ -19,10 +20,12 @@ const CountryCard: React.FC<CountryCardProps> = ({ country, capital, population,
       <div className="flex flex-row md:flex-col items-center mt-0 md:mt-3 space-x-3 md:space-x-0">
         
         {/* ✅ Flag (Smaller on Mobile) */}
-        <img 
-          src={flag} 
-          alt={`${country} flag`} 
-          className="w-20 h-14 rounded-lg shadow-md border border-gray-200 object-cover"
+        <Image
+          src={flag}
+          alt={`${country} flag`}
+          width={80} // ✅ Explicit width
+          height={60} // ✅ Explicit height
+          className="w-16 h-12 sm:w-20 sm:h-16 rounded-lg shadow-md border border-gray-200 object-cover"
         />
 
 
