@@ -9,9 +9,8 @@ interface CountryCardProps {
 
 const CountryCard: React.FC<CountryCardProps> = ({ country, capital, population, flag }) => {
   return (
-    <div className="bg-base-100 border border-primary rounded-xl shadow-xl p-5 
-                    w-100 backdrop-blur-md bg-opacity-90 
-                    transition-all duration-300 hover:scale-105">
+    <div className="bg-base-100 border border-primary rounded-lg shadow-lg p-3
+                    w-56 sm:w-64 h-36 sm:h-full flex flex-col justify-between">
 
       {/* ✅ Country Name */}
       <h3 className="text-lg md:text-xl font-extrabold text-primary text-center">{country}</h3>
@@ -23,7 +22,7 @@ const CountryCard: React.FC<CountryCardProps> = ({ country, capital, population,
         <img 
           src={flag} 
           alt={`${country} flag`} 
-          className="w-20 h-14 md:w-28 md:h-20 rounded-lg shadow-md border border-gray-200 object-cover"
+          className="w-20 h-14 rounded-lg shadow-md border border-gray-200 object-cover"
         />
 
 

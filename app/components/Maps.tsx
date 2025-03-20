@@ -10,8 +10,10 @@ export default function MapComponent() {
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [countryInfo, setCountryInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true); // ✅ Prevents loading issues
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
-
+  // ✅ Fetch all country boundaries
   useEffect(() => {
     const fetchAllBoundaries = async () => {
       try {
@@ -19,32 +21,33 @@ export default function MapComponent() {
           "https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson"
         );
         const data = await response.json();
-  
-        // ✅ Ensure every country has a unique `id`
+
+        // ✅ Ensure each country has a unique `id`
         const updatedData = {
           ...data,
           features: data.features.map((feature: any, index: number) => ({
             ...feature,
-            id: index + 1, // ✅ Assign unique ID starting from 1
+            id: index + 1, // ✅ Assign unique ID
           })),
         };
-  
+
         setAllCountriesGeoJSON(updatedData);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error loading global country boundaries:", error);
+        setIsLoading(false);
       }
     };
-  
+
     fetchAllBoundaries();
   }, []);
 
+  // ✅ Fetch country details (flag, capital, population)
   const fetchCountryInfo = async (countryName: string) => {
     try {
       const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
       const data = await response.json();
 
-      console.log("COUNTRY DATA", data)
-  
       if (data && data.length > 0) {
         setCountryInfo({
           name: data[0].name.common,
@@ -58,8 +61,8 @@ export default function MapComponent() {
       setCountryInfo(null);
     }
   };
-  
 
+  // ✅ Handle country selection when clicking the map
   const handleMapClick = (e: any) => {
     if (!mapRef.current || !allCountriesGeoJSON) return;
   
@@ -70,7 +73,6 @@ export default function MapComponent() {
       const clickedFeature = features[0];
       const countryId = clickedFeature.id;
       const countryName = clickedFeature.properties.admin;
-      const countryCenter = e.lngLat; 
   
       if (countryId) {
         if (selectedCountryId !== null) {
@@ -79,15 +81,45 @@ export default function MapComponent() {
   
         setSelectedCountryId(countryId);
         setSelectedCountry(countryName);
-  
         map.setFeatureState({ source: "countries", id: countryId }, { selected: true });
-
+  
         fetchCountryInfo(countryName);
+  
+        // ✅ Tooltip only in Desktop View
+        if (window.innerWidth >= 640) {
+          const mapContainer = mapRef.current.getMap().getContainer();
+          const mapWidth = mapContainer.clientWidth;
+          const mapHeight = mapContainer.clientHeight;
+          const cardWidth = 224; // ✅ Fixed width (w-56)
+          const cardHeight = 144; // ✅ Fixed height (h-36)
+  
+          let posX = e.point.x;
+          let posY = e.point.y;
+  
+          // ✅ Adjust position if near the left or right edge
+          if (posX < cardWidth / 2) {
+            posX = cardWidth / 2 + 15; // Shift right if too close to the left
+          } else if (posX > mapWidth - cardWidth / 2) {
+            posX = mapWidth - cardWidth / 2 - 15; // Shift left if too close to the right
+          }
+  
+          // ✅ Adjust position if near the top or bottom
+          if (posY < cardHeight + 20) {
+            posY += cardHeight + 15; // Move tooltip below the click if too close to the top
+          } else if (posY > mapHeight - cardHeight - 30) {
+            console.log("Close to bottom")
+            posY -= cardHeight/4; 
+          } 
+  
+          setTooltipPosition({ x: posX, y: posY });
+        }
       }
     } else {
       setSelectedCountry(null);
+      setTooltipPosition(null);
     }
   };
+  
   
   
 
@@ -98,9 +130,9 @@ export default function MapComponent() {
         {selectedCountry ? `Selected Country: ${selectedCountry}` : "Click on a country"}
       </h2>
 
-      {/* ✅ Responsive Country Card */}
+      {/* ✅ Static Country Card for Mobile */}
       {countryInfo && (
-        <div className="flex justify-center w-full mt-4">
+        <div className="flex justify-center sm:hidden w-full mt-4">
           <CountryCard
             country={countryInfo.name}
             capital={countryInfo.capital}
@@ -110,56 +142,80 @@ export default function MapComponent() {
         </div>
       )}
 
-      {/* ✅ Responsive Map - Adjusts Height Based on Device */}
-      <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] border border-primary rounded-lg shadow-lg overflow-hidden">
-        <Map
-          ref={mapRef}
-          mapLib={import("maplibre-gl")}
-          initialViewState={{ latitude: 20, longitude: 0, zoom: 2 }}
-          style={{ width: "100%", height: "100%" }}
-          mapStyle="https://demotiles.maplibre.org/style.json"
-          onClick={handleMapClick}
-          onLoad={() => {
-            const map = mapRef.current.getMap();
+      {/* ✅ Map Container with Loading Indicator */}
+      <div className="relative w-full h-[400px] sm:h-[500px] md:h-[600px] border border-primary rounded-lg shadow-lg overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-secondary font-bold animate-pulse">Loading Map...</p>
+          </div>
+        ) : (
+          <Map
+            ref={mapRef}
+            mapLib={import("maplibre-gl")}
+            initialViewState={{ latitude: 20, longitude: 0, zoom: 2 }}
+            style={{ width: "100%", height: "100%" }}
+            mapStyle="https://demotiles.maplibre.org/style.json"
+            onClick={handleMapClick}
+            onLoad={() => {
+              const map = mapRef.current.getMap();
 
-            map.addSource("countries", {
-              type: "geojson",
-              data: allCountriesGeoJSON,
-            });
+              map.addSource("countries", {
+                type: "geojson",
+                data: allCountriesGeoJSON,
+              });
 
-            // ✅ Add the country fill layer with dynamic color based on `feature-state`
-            map.addLayer({
-              id: "country-fills",
-              type: "fill",
-              source: "countries",
-              paint: {
-                "fill-color": [
-                  "case",
-                  ["boolean", ["feature-state", "selected"], false],
-                  "#ff0000",
-                  "rgba(0,0,0,0)",
-                ],
-                "fill-opacity": 0.6,
-              },
-            });
+              // ✅ Add the country fill layer with DaisyUI colors
+              map.addLayer({
+                id: "country-fills",
+                type: "fill",
+                source: "countries",
+                paint: {
+                  "fill-color": [
+                    "case",
+                    ["boolean", ["feature-state", "selected"], false],
+                    "#570df8", // ✅ DaisyUI primary color
+                    "rgba(0,0,0,0)",
+                  ],
+                  "fill-opacity": 0.6,
+                },
+              });
 
-            // ✅ Add country borders
-            map.addLayer({
-              id: "country-borders",
-              type: "line",
-              source: "countries",
-              paint: {
-                "line-color": [
-                  "case",
-                  ["boolean", ["feature-state", "selected"], false],
-                  "#ff0000",
-                  "rgba(0,0,0,0)",
-                ],
-                "line-width": 2,
-              },
-            });
-          }}
-        />
+              // ✅ Add country borders
+              map.addLayer({
+                id: "country-borders",
+                type: "line",
+                source: "countries",
+                paint: {
+                  "line-color": [
+                    "case",
+                    ["boolean", ["feature-state", "selected"], false],
+                    "#f000b8", // ✅ DaisyUI secondary color
+                    "rgba(0,0,0,0)",
+                  ],
+                  "line-width": 2,
+                },
+              });
+            }}
+          />
+        )}
+
+{tooltipPosition && countryInfo && (
+  <div
+    className="hidden sm:block absolute w-64 transition-opacity duration-300"
+    style={{
+      left: `${tooltipPosition.x}px`,
+      top: `${tooltipPosition.y}px`,
+      transform: "translate(-50%, -100%)",
+    }}
+  >
+    <CountryCard
+      country={countryInfo.name}
+      capital={countryInfo.capital}
+      population={countryInfo.population}
+      flag={countryInfo.flag}
+    />
+  </div>
+)}
       </div>
     </div>
   );
