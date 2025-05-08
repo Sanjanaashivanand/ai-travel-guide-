@@ -12,6 +12,11 @@ const nextConfig = {
         hostname: "upload.wikimedia.org",
         pathname: "/**",
       },
+      {
+        protocol: 'https',
+        hostname: 'restfulcountries.com',
+        pathname: '/assets/images/flags/**',
+      }
     ],
   },
 };

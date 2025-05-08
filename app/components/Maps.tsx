@@ -1,10 +1,14 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Map from "react-map-gl/maplibre";
+import axios from 'axios';
 import { MapRef } from "react-map-gl/maplibre";
 import { MapLayerMouseEvent } from "react-map-gl/maplibre";
 import CountryCard from "./CountryCard";
 import { Feature, FeatureCollection } from "geojson"; 
+
+const token = process.env.NEXT_PUBLIC_COUNTRY_INFO_API_TOKEN;
+
 
 export default function MapComponent() {
   const mapRef = useRef<MapRef | null>(null); 
@@ -16,10 +20,14 @@ export default function MapComponent() {
     capital: string;
     population: string;
     flag: string;
+    error?: string;
   } | null>(null);
+  const [countryFact, setCountryFact] = useState<string>("");
 
   const [isLoading, setIsLoading] = useState(true); // ✅ Prevents loading issues
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [factLoading, setFactLoading] = useState(false);
 
   // ✅ Fetch all country boundaries
   useEffect(() => {
@@ -51,24 +59,58 @@ export default function MapComponent() {
   }, []);
 
   // ✅ Fetch country details (flag, capital, population)
-  const fetchCountryInfo = async (countryName: string) => {
+  const fetchCountryInfo = async (iso2: string) => {
+    setLoading(true);
+  
     try {
-      const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
-      const data = await response.json();
+      const response = await axios.get(`https://restfulcountries.com/api/v1/countries?iso2=${iso2}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      
+      const data = response.data.data
 
-      if (data && data.length > 0) {
+      if (data) {
+        const population = data.population;
+        const formattedPopulation = population ? parseInt(population.replace(/,/g, ''), 10).toLocaleString() : "Unknown";
+        const flagUrl = data.href && data.href.flag ? data.href.flag : 'https://upload.wikimedia.org/wikipedia/commons/d/de/Flag_of_the_United_States.png';
+
         setCountryInfo({
-          name: data[0].name.common,
-          capital: data[0].capital ? data[0].capital[0] : "Unknown",
-          population: data[0].population.toLocaleString(),
-          flag: data[0].flags.png,
+          name: data.name,
+          capital: data.capital || "Unknown",
+          population: formattedPopulation,
+          flag: flagUrl,
         });
       }
+
     } catch (error) {
       console.error("Error fetching country info:", error);
       setCountryInfo(null);
+    } finally{
+      setLoading(false);
     }
   };
+
+  const fetchCountryFunFact = async (countryName: string) => {
+    try {
+      setFactLoading(true);
+      const res = await fetch("/api/fun-fact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country: countryName }),
+      });
+  
+      const data = await res.json();
+      setCountryFact(data.fact || "No fun fact available.");
+    } catch (err) {
+      console.error("Error fetching fun fact:", err);
+      setCountryFact("Could not fetch a fun fact at this time.");
+    } finally {
+      setFactLoading(false);
+    }
+  };
+  
 
   // ✅ Handle country selection when clicking the map
   const handleMapClick = (e: MapLayerMouseEvent) => {
@@ -81,6 +123,9 @@ export default function MapComponent() {
       const clickedFeature = features[0];
       const countryId = Number(clickedFeature.id);
       const countryName = clickedFeature.properties.admin;
+      const iso2 = clickedFeature.properties.iso_a2
+
+      console.log(clickedFeature)
   
       if (countryId) {
         if (selectedCountryId !== null) {
@@ -91,7 +136,18 @@ export default function MapComponent() {
         setSelectedCountry(countryName);
         map.setFeatureState({ source: "countries", id: countryId }, { selected: true });
   
-        fetchCountryInfo(countryName);
+        if (iso2 && iso2 != "-99") {
+          fetchCountryInfo(iso2);
+          fetchCountryFunFact(countryName);
+        } else {
+          setCountryInfo({
+            name: countryName || "Unknown Region",
+            capital: "N/A",
+            population: "N/A",
+            flag: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/No_flag.svg/225px-No_flag.svg.png", // error icon or neutral fallback
+            error: "Country data unavailable.",
+          });
+        }
   
         // ✅ Tooltip only in Desktop View
         if (window.innerWidth >= 640) {
@@ -112,7 +168,7 @@ export default function MapComponent() {
           }
   
           // ✅ Adjust position if near the top or bottom
-          if (posY < cardHeight + 20) {
+          if (posY < cardHeight + 0) {
             posY = cardHeight + 55; // Move tooltip below the click if too close to the top
           } else if (posY > mapHeight - cardHeight - 30) {
             posY -= cardHeight/4 - 30; 
@@ -145,6 +201,8 @@ export default function MapComponent() {
             capital={countryInfo.capital}
             population={countryInfo.population}
             flag={countryInfo.flag}
+            fact={countryFact}
+            loadingFact={factLoading}
           />
         </div>
       )}
@@ -216,14 +274,23 @@ export default function MapComponent() {
       transform: "translate(-50%, -100%)",
     }}
   >
-    <CountryCard
-      country={countryInfo.name}
-      capital={countryInfo.capital}
-      population={countryInfo.population}
-      flag={countryInfo.flag}
-    />
+    {loading ? (
+      <p className="text-gray-500">Loading country info...</p>
+    ) : countryInfo ? (
+      <CountryCard
+  country={countryInfo.name}
+  capital={countryInfo.capital}
+  population={countryInfo.population}
+  flag={countryInfo.flag}
+  fact={countryFact}
+  loadingFact={factLoading}
+  error={countryInfo.error}
+/>
+    ) : (
+      <p className="text-red-500">Country not found 🙃</p>
+    )}
   </div>
-)}
+  )}
       </div>
     </div>
   );
