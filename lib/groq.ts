@@ -7,7 +7,11 @@ export async function getGroqFunFact(country: string) {
     messages: [
       {
         role: "user",
-        content: `Tell me some interesting facts about the ${country}. Keep it short and delightful.`,
+        content: `Tell me 5 short, interesting facts about ${country}.
+                  Each fact should be concise (1–2 sentences), fun, and easy to read.
+                  Return the output as a bulleted Markdown list so it can be directly displayed on a webpage.
+                  Do not give me into or conclusion just facts, start with a tagline,
+                  Don't use ** for bold. Prefix each bullet with *`,
       },
     ],
     model: "llama3-70b-8192",

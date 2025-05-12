@@ -37,7 +37,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
   }
 
   return (
-    <div className="bg-base-100 border border-primary rounded-lg shadow-lg p-3 w-56 sm:w-64 h-auto max-h-80 flex flex-col justify-between overflow-hidden">
+    <div className="w-full bg-red-100 border border-red-400 text-red-800 p-4 rounded-lg shadow-lg text-center space-y-2">
       <h3 className="text-lg md:text-xl font-extrabold text-primary text-center">{country}</h3>
 
       <div className="flex flex-row md:flex-col items-center mt-0 md:mt-3 space-x-3 md:space-x-0">
@@ -67,22 +67,30 @@ const CountryCard: React.FC<CountryCardProps> = ({
 
       <button
         onClick={toggleFacts}
-        className="mt-2 text-sm text-blue-500 hover:underline focus:outline-none"
+        className={`mt-3 px-4 py-2 rounded-full border border-primary text-primary text-sm font-medium transition-all duration-200 ease-in-out
+          hover:bg-primary hover:text-base-100 shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/50`}
       >
         {showFacts ? "Hide Facts" : "Show Interesting Facts"}
       </button>
 
-      {showFacts && (
-        <div className="mt-2 text-xs md:text-sm text-gray-600 overflow-y-auto max-h-24">
-          {loadingFact ? (
-            <p className="italic text-gray-400">Fetching fun facts...</p>
-          ) : fact ? (
-            <p className="whitespace-pre-wrap">{fact}</p>
-          ) : (
-            <p className="italic text-gray-400">No fact available for this country.</p>
-          )}
+      {showFacts && fact && (
+        <div className="mt-3 px-4 py-3 bg-base-200 rounded-md border border-primary/30 shadow-inner max-h-[300px] overflow-y-auto text-sm text-gray-700 space-y-2">
+          <h4 className="font-semibold text-primary text-center">
+            {fact.split('\n')[0]}
+          </h4>
+          <ul className="list-disc list-inside space-y-1">
+            {fact
+              .split('\n')
+              .slice(1)
+              .filter(line => line.trim() !== '')
+              .map((line, index) => (
+                <li key={index}>{line.replace(/^\* /, '')}</li>
+              ))}
+          </ul>
         </div>
       )}
+
+
     </div>
   );
 };

@@ -66,7 +66,8 @@ export default function MapComponent() {
       const response = await axios.get(`https://restfulcountries.com/api/v1/countries?iso2=${iso2}`, {
         headers: {
           Authorization: `Bearer ${token}`
-        }
+        },
+        validateStatus: () => true,
       })
       
       const data = response.data.data
@@ -80,13 +81,18 @@ export default function MapComponent() {
           name: data.name,
           capital: data.capital || "Unknown",
           population: formattedPopulation,
-          flag: flagUrl,
+          flag: flagUrl
         });
       }
-
     } catch (error) {
-      console.error("Error fetching country info:", error);
-      setCountryInfo(null);
+      // console.error("Error fetching country info:", error);
+      setCountryInfo({
+        name: "Unknown",
+        capital: "Unknown",
+        population: "Unknown",
+        flag: "https://upload.wikimedia.org/wikipedia/commons/d/de/Flag_of_the_United_States.png",
+        error: "Data will be available soon",
+      });
     } finally{
       setLoading(false);
     }
@@ -151,64 +157,68 @@ export default function MapComponent() {
   
         // ✅ Tooltip only in Desktop View
         if (window.innerWidth >= 640) {
-          const mapContainer = mapRef.current.getMap().getContainer();
-          const mapWidth = mapContainer.clientWidth;
-          const mapHeight = mapContainer.clientHeight;
-          const cardWidth = 224; // ✅ Fixed width (w-56)
-          const cardHeight = 144; // ✅ Fixed height (h-36)
-  
+          const cardWidth = 224; // Tailwind w-56
+          const cardHeight = 200;
+        
           let posX = e.point.x;
           let posY = e.point.y;
-  
-          // ✅ Adjust position if near the left or right edge
-          if (posX < cardWidth / 2) {
-            posX = cardWidth / 2 + 20; // Shift right if too close to the left
-          } else if (posX > mapWidth - cardWidth / 2) {
-            posX = mapWidth - cardWidth / 2 - 20; // Shift left if too close to the right
+        
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+        
+          // Horizontal clamp
+          posX = Math.max(cardWidth / 2 + 16, Math.min(viewportWidth - cardWidth / 2 - 16, posX));
+        
+          // Vertical clamp (account for translateY(-100%))
+          const topSafeMargin = 100;
+          const minY = cardHeight + topSafeMargin;
+        
+          if (posY < minY) {
+            posY = minY;
+          } else if (posY > viewportHeight - 24) {
+            posY = viewportHeight - 24;
           }
-  
-          // ✅ Adjust position if near the top or bottom
-          if (posY < cardHeight + 0) {
-            posY = cardHeight + 55; // Move tooltip below the click if too close to the top
-          } else if (posY > mapHeight - cardHeight - 30) {
-            posY -= cardHeight/4 - 30; 
-          } 
-  
+        
           setTooltipPosition({ x: posX, y: posY });
-        }
+        }        
       }
     } else {
       setSelectedCountry(null);
       setTooltipPosition(null);
     }
   };
-  
-  
-  
+
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto p-4 space-y-4">
+    <div className="relative h-full w-full p-4 flex flex-col justify-center">
+
       {/* ✅ Responsive Heading */}
-      <h2 className="hidden sm:block text-2xl font-bold text-center text-primary">
+      <h2
+        className={`hidden sm:block text-2xl pb-4 font-bold text-center text-primary transition-all duration-500 ease-in-out transform ${
+          selectedCountry ? "opacity-100 translate-y-0" : "opacity-50 -translate-y-2"
+        }`}
+      >
         {selectedCountry ? `Selected Country: ${selectedCountry}` : "Click on a country"}
       </h2>
 
+
       {/* ✅ Static Country Card for Mobile */}
       {countryInfo && (
-        <div className="flex justify-center sm:hidden w-full mt-4">
+        <div className="w-full sm:hidden mt-4 px-4">
           <CountryCard
-            country={countryInfo.name}
-            capital={countryInfo.capital}
-            population={countryInfo.population}
-            flag={countryInfo.flag}
-            fact={countryFact}
-            loadingFact={factLoading}
-          />
+              country={countryInfo.name}
+              capital={countryInfo.capital}
+              population={countryInfo.population}
+              flag={countryInfo.flag}
+              fact={countryFact}
+              loadingFact={factLoading}
+              error={countryInfo.error}
+            />
         </div>
       )}
 
       {/* ✅ Map Container with Loading Indicator */}
-      <div className="relative w-full h-[400px] sm:h-[500px] md:h-[600px] border border-primary rounded-lg shadow-lg overflow-hidden">
+      <div className="relative w-full h-[400px] sm:h-[500px] md:h-[600px] border border-primary rounded-lg shadow-lg overflow-visible">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-secondary font-bold animate-pulse">Loading Map...</p>
@@ -218,6 +228,8 @@ export default function MapComponent() {
             ref={mapRef}
             mapLib={import("maplibre-gl")}
             initialViewState={{ latitude: 20, longitude: 0, zoom: 2 }}
+            minZoom={1.5}
+            maxZoom={6.5}
             style={{ width: "100%", height: "100%" }}
             mapStyle="https://demotiles.maplibre.org/style.json"
             onClick={handleMapClick}
@@ -265,33 +277,35 @@ export default function MapComponent() {
           />
         )}
 
-{tooltipPosition && countryInfo && (
-  <div
-    className="hidden sm:block absolute w-64 transition-opacity duration-300"
-    style={{
-      left: `${tooltipPosition.x}px`,
-      top: `${tooltipPosition.y}px`,
-      transform: "translate(-50%, -100%)",
-    }}
-  >
-    {loading ? (
-      <p className="text-gray-500">Loading country info...</p>
-    ) : countryInfo ? (
-      <CountryCard
-  country={countryInfo.name}
-  capital={countryInfo.capital}
-  population={countryInfo.population}
-  flag={countryInfo.flag}
-  fact={countryFact}
-  loadingFact={factLoading}
-  error={countryInfo.error}
-/>
-    ) : (
-      <p className="text-red-500">Country not found 🙃</p>
-    )}
-  </div>
-  )}
+    {tooltipPosition && countryInfo && (
+      <div
+        className="hidden sm:block absolute w-64 transition-opacity duration-300"
+        style={{
+          left: `${tooltipPosition.x}px`,
+          top: `${tooltipPosition.y}px`,
+          transform: "translate(-50%, -100%)",
+        }}
+      >
+        {loading ? (
+          <p className="text-gray-500">Loading country info...</p>
+        ) : countryInfo ? (
+          <CountryCard
+              country={countryInfo.name}
+              capital={countryInfo.capital}
+              population={countryInfo.population}
+              flag={countryInfo.flag}
+              fact={countryFact}
+              loadingFact={factLoading}
+              error={countryInfo.error}
+            />
+        ) : (
+          <p className="text-red-500">Country not found 🙃</p>
+        )}
       </div>
+      )}
+      </div>
+
     </div>
   );
 }
+
