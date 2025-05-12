@@ -17,7 +17,6 @@ const CountryCard: React.FC<CountryCardProps> = ({
   population,
   flag,
   fact,
-  loadingFact,
   error,
 }) => {
   const [showFacts, setShowFacts] = useState(false);

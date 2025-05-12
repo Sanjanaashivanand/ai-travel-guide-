@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ✈️ Travel AI: Explore the World, Enriched with AI
 
-## Getting Started
+**Travel AI** is an interactive, AI-powered world map that lets you click on any country and instantly discover its key facts — capital, population, flag — along with fun, engaging trivia generated in real-time by a Large Language Model (LLM) via **[GROQ](https://groq.com/)**.
 
-First, run the development server:
+Built with **Next.js**, **MapLibre GL**, and **Tailwind CSS**, this responsive app delivers an elegant and educational experience for travelers, students, and the globally curious.
+
+🔗 **Live Demo**: [https://travel-ai.vercel.app](https://travel-ai-61vm9or3s-sanjanaashivanands-projects.vercel.app/)
+
+---
+
+## ✨ Features
+
+- 🌐 **Interactive World Map** — Clickable countries rendered with [MapLibre GL](https://maplibre.org/)
+- 📍 **Live Country Data** — Name, capital, population, and national flag
+- 🤖 **AI-Generated Fun Facts** — GROQ-powered LLM returns short, delightful trivia for each country
+- 💬 **Smart Tooltip Positioning** — Prevents screen overflow and adapts to viewport size
+- 📱 **Fully Responsive** — Optimized for mobile, tablet, and desktop
+- 🎨 **Beautiful UI** — Styled with Tailwind CSS and DaisyUI
+
+---
+
+## 🛠 Tech Stack
+
+| Tech             | Description                                 |
+|------------------|---------------------------------------------|
+| **Next.js**       | React framework with file-based routing     |
+| **TypeScript**    | Type safety and better DX                  |
+| **MapLibre GL JS**| Open-source web map renderer               |
+| **GROQ**          | LLM-powered trivia generation               |
+| **Tailwind CSS**  | Utility-first styling                      |
+| **DaisyUI**       | Prebuilt components on top of Tailwind     |
+
+---
+
+## 📦 Installation
+
+Clone the project and install dependencies:
+
+```bash
+git clone https://github.com/your-username/travel-ai.git
+cd travel-ai
+npm install
+```
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then visit http://localhost:3000 🚀
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔐 Environment Variables
 
-## Learn More
+Create a .env.local file in the root directory and add:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+NEXT_PUBLIC_COUNTRY_INFO_API_TOKEN=your_restfulcountries_api_token
+GROQ_API_KEY=your_groq_api_key
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+You’ll need an API key from GROQ and RESTfulCountries.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧠 Prompt Engineering with GROQ
 
-## Deploy on Vercel
+We send dynamic prompts to GROQ’s LLM to generate facts like:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+"Tell me 5 short, interesting facts about Japan. Return a Markdown list starting with a tagline."
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The result is parsed and displayed in a styled tooltip, perfect for quick learning or casual exploring.
+
+## 🔮 Planned Enhancements
+- 🌍 Fit-to-country bounding box zoom on selection
+- 🔍 Country search with autocomplete
+- 💾 Save favorite facts to local storage
+- 🌙 Dark mode toggle
+- 🔄 Regenerate trivia button 
+
+
+---
+
+## 📝 License
+
+MIT © [Sanjana Ashivanand](https://github.com/sanjanaashivanand)
+
+---
+
+## 🙏 Acknowledgements
+
+- [MapLibre GL JS](https://maplibre.org/)
+- [GROQ](https://groq.com/)
+- [RESTfulCountries API](https://restfulcountries.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [DaisyUI](https://daisyui.com/)
+- [Vercel](https://vercel.com/) — for hassle-free deployment ❤️
+
+---
+
+## 🚀 Deploy Your Own
+
+Want to fork, customize, and deploy this map for your own use case? Click below:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project)
+
+---
+
+## 💬 Feedback
+
+If you enjoyed this project or have suggestions, feel free to open an [issue](https://github.com/your-username/travel-ai/issues) or reach out via [LinkedIn](https://linkedin.com/in/sanjanaashivanand).
+
+---

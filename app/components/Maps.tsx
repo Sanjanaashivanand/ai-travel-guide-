@@ -63,29 +63,36 @@ export default function MapComponent() {
     setLoading(true);
   
     try {
-      const response = await axios.get(`https://restfulcountries.com/api/v1/countries?iso2=${iso2}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        validateStatus: () => true,
-      })
-      
-      const data = response.data.data
-
+      const response = await axios.get(
+        `https://restfulcountries.com/api/v1/countries?iso2=${iso2}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          validateStatus: () => true, // avoids axios throwing on 4xx
+        }
+      );
+    
+      const data = response.data?.data;
+    
       if (data) {
-        const population = data.population;
-        const formattedPopulation = population ? parseInt(population.replace(/,/g, ''), 10).toLocaleString() : "Unknown";
-        const flagUrl = data.href && data.href.flag ? data.href.flag : 'https://upload.wikimedia.org/wikipedia/commons/d/de/Flag_of_the_United_States.png';
-
+        const rawPopulation = data.population;
+        const formattedPopulation = rawPopulation
+          ? Number(rawPopulation.replace(/,/g, "")).toLocaleString()
+          : "Unknown";
+    
+        const flagUrl =
+          data.href?.flag ||
+          "https://upload.wikimedia.org/wikipedia/commons/d/de/Flag_of_the_United_States.png";
+    
         setCountryInfo({
           name: data.name,
           capital: data.capital || "Unknown",
           population: formattedPopulation,
-          flag: flagUrl
+          flag: flagUrl,
         });
+      } else {
+        throw new Error("No data returned for this country");
       }
-    } catch (error) {
-      // console.error("Error fetching country info:", error);
+    } catch {
       setCountryInfo({
         name: "Unknown",
         capital: "Unknown",
@@ -93,9 +100,10 @@ export default function MapComponent() {
         flag: "https://upload.wikimedia.org/wikipedia/commons/d/de/Flag_of_the_United_States.png",
         error: "Data will be available soon",
       });
-    } finally{
+    } finally {
       setLoading(false);
     }
+    
   };
 
   const fetchCountryFunFact = async (countryName: string) => {
@@ -211,7 +219,6 @@ export default function MapComponent() {
               population={countryInfo.population}
               flag={countryInfo.flag}
               fact={countryFact}
-              loadingFact={factLoading}
               error={countryInfo.error}
             />
         </div>
@@ -286,7 +293,7 @@ export default function MapComponent() {
           transform: "translate(-50%, -100%)",
         }}
       >
-        {loading ? (
+        {loading || factLoading ? (
           <p className="text-gray-500">Loading country info...</p>
         ) : countryInfo ? (
           <CountryCard
@@ -295,7 +302,6 @@ export default function MapComponent() {
               population={countryInfo.population}
               flag={countryInfo.flag}
               fact={countryFact}
-              loadingFact={factLoading}
               error={countryInfo.error}
             />
         ) : (
