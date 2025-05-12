@@ -4,6 +4,10 @@
 
 Built with **Next.js**, **MapLibre GL**, and **Tailwind CSS**, this responsive app delivers an elegant and educational experience for travelers, students, and the globally curious.
 
+
+https://github.com/user-attachments/assets/96bbb076-17b6-4a43-ab14-bf6f0c0e69fe
+
+
 🔗 **Live Demo**: [https://travel-ai.vercel.app](https://travel-ai-61vm9or3s-sanjanaashivanands-projects.vercel.app/)
 
 ---
